@@ -1,0 +1,68 @@
+services:
+  accounts-postgres:
+    image: postgres:18.3-alpine
+    container_name: accounts_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_ADMIN}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_pass
+      DB_USER: ${DB_USER}
+      DB_USER_PASS: ${DB_USER_PASS}
+    ports:
+      - "9002:5432"
+    secrets:
+      - pg_pass
+    volumes:
+      - accounts_pgdata:/var/lib/postgresql/data
+      - ./init-user.sh:/docker-entrypoint-initdb.d/init-user.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_ADMIN} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gazella-net
+  
+  accounts-migrator:
+    build:
+      context: .
+    container_name: accounts_migrator
+    environment:
+      - DATABASE_ADMIN_URL=${DATABASE_ADMIN_URL}
+    networks:
+      - gazella-net
+    command: npm run db:migrate
+    depends_on:
+      accounts-postgres:
+        condition: service_healthy
+  
+  accounts-service:
+    build:
+      context: .
+    container_name: accounts_service
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=deployment
+      - DATABASE_URL{$DATABASE_URL}
+    env_file:
+      - .env
+    networks:
+      - gazella-net
+    depends_on:
+      accounts-migrator:
+        condition: service_completed_successfully
+
+volumes:
+  accounts_pgdata:
+
+secrets:
+  pg_pass:
+    file: ./pg_password.txt
+
+networks:
+  gazella-net:
+    external: true
+
