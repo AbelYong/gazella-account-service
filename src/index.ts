@@ -3,10 +3,11 @@ import dotenv from "dotenv"
 import { rabbitMQService } from "./messaging/rabbitmq.js";
 import { globalErrorHandler } from "./handlers/error_handler.js";
 import { consumeUserRegisteredEvents } from "./messaging/consumer.js";
-import { AccountQuerySchema } from "./schemas/account_schema.js";
+import { AccountQuerySchema, UpdateAccountSchema } from "./schemas/account_schema.js";
 import { asyncHandler } from "./handlers/async_handler.js";
-import { validateQuery } from "./validators/request_validator.js";
-import { getAccountById } from "./controller/account_controller.js";
+import { validateBody, validateQuery } from "./validators/request_validator.js";
+import { getAccountById, updateAccount } from "./controller/account_controller.js";
+import { requireAuth } from "./validators/auth_validator.js";
 
 dotenv.config();
 
@@ -17,10 +18,12 @@ async function startServer() {
         app.use(express.json());
 
         app.get("/accounts", validateQuery(AccountQuerySchema), asyncHandler(getAccountById));
-        app.patch("/accounts");
+        app.patch("/accounts", requireAuth, validateBody(UpdateAccountSchema), asyncHandler(updateAccount));
+        /*
         app.post("/social");
         app.delete("/social");
         app.get("/followers");
+        */
 
         await rabbitMQService.connect();
         await consumeUserRegisteredEvents();

@@ -32,3 +32,29 @@ export const AccountQuerySchema = z.object({
 });
 
 export type AccountQueryInput = z.infer<typeof AccountQuerySchema>;
+
+export const UpdateAccountSchema = z.object({
+    pfpUri: z.string().max(256).optional().nullable(),
+    name: z.string()
+        .trim()
+        .min(2, { error: "Name cannot be empty or be only blank space" })
+        .max(32, { error: "Name cannot be longer than 32 characters" })
+        .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+(?: [a-zA-ZáéíóúÁÉÍÓÚñÑ]+)*$/, { 
+            error: "Numbers, symbols and contiguous blank spaces are not allowed" 
+        }),
+    parentalSurname: z.string()
+        .trim()
+        .max(32, { error: "Parental surname cannot be longer than 32 characters" })
+        .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+(?: [a-zA-ZáéíóúÁÉÍÓÚñÑ]+)*$|^$/, { 
+            error: "Numbers, symbols and contiguous blank spaces are not allowed" 
+        }).optional().nullable(),
+    maternalSurname: z.string()
+        .trim()
+        .max(32, { error: "Maternal surname cannot be longer than 32 characters" })
+        .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+(?: [a-zA-ZáéíóúÁÉÍÓÚñÑ]+)*$|^$/, { 
+            error: "Numbers, symbols and contiguous blank spaces are not allowed" 
+        }).optional().nullable(),
+    bio: z.string().max(512, { error: "Biography cannot exceed 512 characters" }).optional().nullable(),
+});
+
+export type UpdateAccountInput = z.infer<typeof UpdateAccountSchema>;

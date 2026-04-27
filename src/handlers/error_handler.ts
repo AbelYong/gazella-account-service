@@ -11,6 +11,14 @@ export const globalErrorHandler = (
         console.error("Error:", err);
     }
 
+    if (err.name === "UnauthorizedError") {
+        res.status(401).json({
+            error: "Access deniend",
+            message: err.message
+        });
+        return;
+    }
+
     if (err instanceof AppError) {
         res.status(err.statusCode).json({
             error: err.message
@@ -29,8 +37,9 @@ export const globalErrorHandler = (
     if (errorCodes.has(err.code)) {
         res.status(503).json({
             error: "Service unavaible",
-            message: "Database is currently unavaible. Please try again later"
+            message: "A downstream service or database is currently unavaible. Please try again later"
         });
+        return;
     }
 
     res.status(500).json({

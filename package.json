@@ -19,6 +19,8 @@
     "dotenv": "^17.4.2",
     "drizzle-orm": "^1.0.0-beta.22",
     "express": "^5.2.1",
+    "express-jwt": "^8.5.1",
+    "jwks-rsa": "^4.0.1",
     "postgres": "^3.4.9",
     "zod": "^4.3.6"
   },
