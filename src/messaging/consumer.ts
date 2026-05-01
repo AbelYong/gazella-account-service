@@ -38,8 +38,9 @@ export async function consumeUserRegisteredEvents() {
 async function processUserRegisteredEvent(msg: ConsumeMessage, channel: amqp.Channel) {
     try {
         const content = msg.content.toString();
+        console.log(`[EVENT] A user registration event has been received from the MQ: ${content}`);
+        
         const userData = JSON.parse(content) as UserRegisteredMsg;
-
         const isValid = UserRegisteredSchema.safeParse(userData);
 
         if (isValid.success) {
@@ -49,6 +50,8 @@ async function processUserRegisteredEvent(msg: ConsumeMessage, channel: amqp.Cha
 
             channel.ack(msg);
         } else {
+            console.log(`[EVENT] A malformed user registration message has been received: ${isValid.error}`);
+
             channel.publish(DLQ_EXCHANGE, "dlq.routing.key", msg.content);
             channel.ack(msg);
         }           
@@ -56,7 +59,7 @@ async function processUserRegisteredEvent(msg: ConsumeMessage, channel: amqp.Cha
         console.error(`Failed to process event ${userRegisteredRoutingKey}:`, error);
 
         if (!(error instanceof DbError)) {
-            console.error("An unexepected error has occurred while processing and user registered event: ", error);
+            console.error("An unexpected error has occurred while processing and user registered event: ", error);
             channel.publish(DLQ_EXCHANGE, "dlq.routing.key", msg.content);
             channel.ack(msg);
             return;

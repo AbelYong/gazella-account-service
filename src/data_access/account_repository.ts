@@ -8,12 +8,8 @@ export async function registerNewUser(newUser: UserRegisteredInput) {
         email: newUser.email,
         name: newUser.name,
         parentalSurname: newUser.parentalSurname,
-        maternalSurname: newUser.maternalSurname
-    });
-}
-
-export async function getAccountById(id: string) {
-    return await db.query.Accounts.findFirst({
-        where: { id: id }
+        maternalSurname: newUser.maternalSurname,
+        role: newUser.role,
+        joinedAt: newUser.registratedAt
     });
 }
