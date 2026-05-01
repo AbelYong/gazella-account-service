@@ -26,7 +26,7 @@ DB_USER=
 DB_USER_PASS=
 DATABASE_ADMIN_URL=postgresql://[user]:[pass]@[db-server]:5432/[db-name]
 DATABASE_URL=postgresql://[user]:[pass]@[db-server]:5432/[db-name]
-RABBITMQ_URL=amqp://[rabbitMQUser]:[pass]@[rabbitMQ-server]:5672/%2fgazella
+RABBITMQ_URL=amqp://[rabbitMQUser]:[pass]@[rabbitMQ-server]:5672/[virtualHost]
 ISSUER_URL=[direccion del gateway gazella]
 ```
 
