@@ -1,29 +1,29 @@
-import express from "express"
-import dotenv from "dotenv"
+import express from "express";
+import dotenv from "dotenv";
+import swaggerJsDoc from "swagger-jsdoc";
+import swaggerUi from "swagger-ui-express";
 import { rabbitMQService } from "./messaging/rabbitmq.js";
 import { globalErrorHandler } from "./handlers/error_handler.js";
 import { consumeUserRegisteredEvents } from "./messaging/consumer.js";
-import { AccountQuerySchema, UpdateAccountSchema } from "./schemas/account_schema.js";
-import { asyncHandler } from "./handlers/async_handler.js";
-import { validateBody, validateQuery } from "./validators/request_validator.js";
-import { getAccountById, updateAccount } from "./controller/account_controller.js";
-import { requireAuth } from "./validators/auth_validator.js";
+import { swaggerOptions } from "./swagger.js";
+import routes from "./routes.js";
 
 dotenv.config();
 
 const app = express();
+app.disable("x-powered-by");
+
+const specs = swaggerJsDoc(swaggerOptions);
 
 async function startServer() {
     try {
         app.use(express.json());
 
-        app.get("/accounts", validateQuery(AccountQuerySchema), asyncHandler(getAccountById));
-        app.patch("/accounts", requireAuth, validateBody(UpdateAccountSchema), asyncHandler(updateAccount));
-        /*
-        app.post("/social");
-        app.delete("/social");
-        app.get("/followers");
-        */
+        if (process.env["NODE_ENV"] === "development") {
+            app.use("/docs", swaggerUi.serve, swaggerUi.setup(specs));
+        }
+
+        app.use("/", routes);
 
         await rabbitMQService.connect();
         await consumeUserRegisteredEvents();

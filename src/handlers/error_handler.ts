@@ -1,11 +1,10 @@
 import { Request, Response, NextFunction } from "express"
-import { AppError, RequestError } from "../util/error.js";
 
 export const globalErrorHandler = (
     err: any,
-    req: Request,
+    _req: Request,
     res: Response,
-    next: NextFunction
+    _next: NextFunction
 ): void => {
     if (process.env["NODE_ENV"] !== 'test') {
         console.error("Error:", err);
@@ -15,21 +14,6 @@ export const globalErrorHandler = (
         res.status(401).json({
             error: "Access deniend",
             message: err.message
-        });
-        return;
-    }
-
-    if (err instanceof AppError) {
-        res.status(err.statusCode).json({
-            error: err.message
-        });
-        return;
-    }
-
-    if (err instanceof RequestError) {
-        res.status(err.statusCode).json({
-            error: err.message,
-            code: err.code
         });
         return;
     }

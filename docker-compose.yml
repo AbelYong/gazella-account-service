@@ -40,12 +40,12 @@ services:
   accounts-service:
     build:
       context: .
+      target: development
     container_name: accounts_service
     restart: unless-stopped
     ports:
       - "5000:5000"
     environment:
-      - NODE_ENV=deployment
       - DATABASE_URL{$DATABASE_URL}
     env_file:
       - .env
