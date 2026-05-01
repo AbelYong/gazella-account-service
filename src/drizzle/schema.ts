@@ -10,6 +10,8 @@ export const Accounts = pgTable(
         parentalSurname: pg.varchar("paternal_surname", { length: 32} ),
         maternalSurname: pg.varchar("maternal_surname", { length: 32} ),
         bio: pg.varchar("bio", { length: 512 }),
+        role: pg.varchar("role", {length: 64}).notNull(),
+        joinedAt: pg.timestamp("joined_at").notNull(),
     }, (table) => [
         pg.uniqueIndex("email_unqIndex").on(table.email)
     ]
