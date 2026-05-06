@@ -1,13 +1,26 @@
 import { Router } from "express"
-import { getAccountById, getMyAccount, updateAccount } from "./controller/account_controller.js";
-import { followAccount, unfollowAccount, getFollowers } from "./controller/social_controller.js";
 import { asyncHandler } from "./handlers/async_handler.js";
 import { AccountParamsSchema, UpdateAccountSchema } from "./schemas/account_schema.js";
 import { TargetAccountSchema } from "./schemas/social_schema.js";
 import { requireAuth } from "./validators/auth_validator.js";
 import { validateParams, validateBody } from "./validators/request_validator.js";
+import { makeGetAccountByIdController, makeGetMyAccountController, makeUpdateAccountController } from "./controller/account_controller.js";
+import { AccountRepository } from "./data_access/account_repository.js";
+import { db } from "./drizzle/db.js";
+import { SocialRepository } from "./data_access/social_repository.js";
+import { makeFollowAccountController, makeGetFollowersController, makeUnfollowAccountController } from "./controller/social_controller.js";
 
 const router = Router();
+
+const accountRepository = new AccountRepository(db);
+const socialRepository = new SocialRepository(db);
+
+const getMyAccount = makeGetMyAccountController(accountRepository);
+const getAccountById = makeGetAccountByIdController(accountRepository);
+const updateAccount = makeUpdateAccountController(accountRepository);
+const followAccount = makeFollowAccountController(socialRepository);
+const unfollowAccount = makeUnfollowAccountController(socialRepository);
+const getFollowers = makeGetFollowersController(socialRepository);
 
 /**
  * @openapi

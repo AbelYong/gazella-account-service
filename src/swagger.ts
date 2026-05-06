@@ -24,7 +24,6 @@ export const swaggerOptions : Options = {
       },
     ],
   },
-  // Rutas donde Swagger buscará los comentarios para generar la doc
   apis: [
     `${process.cwd()}/src/**/*.ts`
   ]

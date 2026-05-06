@@ -2,9 +2,11 @@ import express from "express";
 import dotenv from "dotenv";
 import swaggerJsDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
+import { db } from "./drizzle/db.js";
 import { rabbitMQService } from "./messaging/rabbitmq.js";
 import { globalErrorHandler } from "./handlers/error_handler.js";
-import { consumeUserRegisteredEvents } from "./messaging/consumer.js";
+import { AccountRepository } from "./data_access/account_repository.js";
+import { AccountConsumer } from "./messaging/consumer.js";
 import { swaggerOptions } from "./swagger.js";
 import routes from "./routes.js";
 
@@ -25,8 +27,7 @@ async function startServer() {
 
         app.use("/", routes);
 
-        await rabbitMQService.connect();
-        await consumeUserRegisteredEvents();
+        await bootstrap();
 
         app.use(globalErrorHandler);
 
@@ -38,6 +39,16 @@ async function startServer() {
         console.error("Failure on startup:", error);
         process.exit(1);
     }
+}
+
+async function bootstrap() {
+    await rabbitMQService.connect();
+    const channel = rabbitMQService.getChannel();
+
+    const accountRepository = new AccountRepository(db);
+    const consumer = new AccountConsumer(channel, accountRepository);
+
+    await consumer.initialize();
 }
 
 process.on("SIGINT", async() => {

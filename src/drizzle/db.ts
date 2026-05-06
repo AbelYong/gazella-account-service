@@ -1,8 +1,10 @@
-import { drizzle } from "drizzle-orm/postgres-js"
-import { relations } from "./relations.js"
-import "dotenv/config"
+import { drizzle } from "drizzle-orm/postgres-js";
+import { relations } from "./relations.js"; // Import your relations
+import "dotenv/config";
 
 export const db = drizzle(
     process.env["DATABASE_URL"] as string, 
-    { relations }
+    { relations: relations }
 );
+
+export type DbClient = typeof db;

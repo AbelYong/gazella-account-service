@@ -1,69 +1,64 @@
 import { Request, Response } from "express";
 import { AccountParamsInput, UpdateAccountInput } from "../schemas/account_schema.js";
-import { db } from "../drizzle/db.js";
-import { Accounts } from "../drizzle/schema.js";
-import { eq } from "drizzle-orm";
 
-export const getMyAccount = async (req: Request, res: Response) : Promise<void> => {
-    const userId = req.auth?.sub;
+import { AccountRepository } from "../data_access/account_repository.js";
 
-    if (!userId) {
-        res.status(401).json({ message: "Invalid Token or subject is missing (sub)", code: "MISSING_SUB" });
-        return;
-    }
+export const makeGetMyAccountController = (repository: AccountRepository) => {
+    return async (req: Request, res: Response) : Promise<void> => {
+        const userId = req.auth?.sub;
 
-    const account = await db.query.Accounts.findFirst({
-        where: { id: userId }
-    });
+        if (!userId) {
+            res.status(401).json({ message: "Invalid Token or subject is missing (sub)", code: "MISSING_SUB" });
+            return;
+        }
 
-    if (account) {
-        res.status(200).json(account);
-    } else {
-        res.status(404).json({message: `No account matching for ${userId} was found`});
-    }
-}
+        const account = await repository.getOwnAccountById(userId);
 
-export const getAccountById = async (req: Request<AccountParamsInput, {}, {}>, res: Response) : Promise<void> => {
-    const id = req.params.id;
-
-    const account = await db.query.Accounts.findFirst({
-        columns: {
-            email: false
-        },
-        where: { id: id }
-    });
-
-    if (account) {
-        res.status(200).json(account);
-    } else {
-        res.status(404).json({message: `No account matching for ${id} was found`});
+        if (account) {
+            res.status(200).json(account);
+        } else {
+            res.status(404).json({message: `No account matching for ${userId} was found`});
+        }
     }
 }
 
-export const updateAccount = async (req: Request<{}, {}, UpdateAccountInput>, res: Response) : Promise<void> => {
-    const userId = req.auth?.sub;
+export const makeGetAccountByIdController = (repository: AccountRepository) => {
+    return async (req: Request<AccountParamsInput, {}, {}>, res: Response) : Promise<void> => {
+        const id = req.params.id;
 
-    if (!userId) {
-        res.status(401).json({ message: "Invalid Token or subject is missing (sub)", code: "MISSING_SUB" });
-        return;
+        const account = await repository.getAccountById(id);
+
+        if (account) {
+            res.status(200).json(account);
+        } else {
+            res.status(404).json({message: `No account matching for ${id} was found`});
+        }
     }
+}
 
-    const updateData = req.body;
+export const makeUpdateAccountController = (repository: AccountRepository) => {
+    return async (req: Request<{}, {}, UpdateAccountInput>, res: Response) : Promise<void> => {
+        const userId = req.auth?.sub;
 
-    if (Object.keys(updateData).length === 0) {
-        res.status(400).json({ message: "No data to update was provided", code: "NO_CONTENT" });
-        return;
-    }
+        if (!userId) {
+            res.status(401).json({ message: "Invalid Token or subject is missing (sub)", code: "MISSING_SUB" });
+            return;
+        }
 
-    const result = await db.update(Accounts)
-        .set(updateData)
-        .where(eq(Accounts.id, userId))
-        .returning();
+        const updateData = req.body;
 
-    if (result.length === 0) {
-        res.status(404).json({ message: "No account was found for this user" });
-        return;
-    }
+        if (Object.keys(updateData).length === 0) {
+            res.status(400).json({ message: "No data to update was provided", code: "NO_CONTENT" });
+            return;
+        }
 
-    res.status(200).json({ message: "Your profile has been successfully updated" });
-};
+        const result = await repository.updateAccount(userId, updateData);
+
+        if (result.length === 0) {
+            res.status(404).json({ message: "No account was found for this user" });
+            return;
+        }
+
+        res.status(200).json({ message: "Your profile has been successfully updated" });
+    };
+}
