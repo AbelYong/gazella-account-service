@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/postgres-js";
-import { relations } from "./relations.js"; // Import your relations
+import { relations } from "./relations.js";
 import "dotenv/config";
 
 export const db = drizzle(
