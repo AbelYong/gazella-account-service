@@ -16,8 +16,11 @@ jobs:
           fetch-depth: 0 # Shallow clones disable some analysis features
           
       - name: Install dependencies
-        run: npm install
-        
+        run: npm ci --ignore-scripts
+
+      - name: Generate database migration script
+        run: npm run db:generate  
+      
       - name: Run Tests with Coverage
         run: npm run test:coverage
         

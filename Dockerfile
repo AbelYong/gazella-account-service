@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 COPY tsconfig.json ./
 COPY src ./src
@@ -19,25 +19,27 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 
-RUN npm ci --ommit=dev
+RUN npm ci --omit=dev --ignore-scripts
 
 COPY --from=builder /app/dist ./dist
 
 COPY ./drizzle ./drizzle
 
-USER account_service
-
 EXPOSE 5000
 
 FROM runner-base AS development
 
+USER account_service
+
 ENV NODE_ENV=development
 
-COPY --from=builder --chown=account_service:account_service /app/src ./src
+COPY --from=builder --chown=root:root --chmod=755 /app/src ./src
 
 CMD ["node", "dist/index.js"]
 
 FROM runner-base AS production
+
+USER account_service
 
 ENV NODE_ENV=production
 
