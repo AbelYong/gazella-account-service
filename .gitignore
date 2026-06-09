@@ -149,3 +149,4 @@ vite.config.ts.timestamp-*
 .vscode
 dist
 pg_password.txt
+drizzle/ 
