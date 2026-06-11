@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { DbClient } from "../drizzle/db.js";
 import { Accounts } from "../drizzle/schema.js";
 import { UpdateAccountInput, UserRegisteredInput } from "../schemas/account_schema.js";
+import { DbError } from "../util/error.js";
 
 export class AccountRepository {
     constructor(private readonly db: DbClient) {}
@@ -22,15 +23,22 @@ export class AccountRepository {
     }
 
     async registerNewUser(newUser: UserRegisteredInput) {
-        await this.db.insert(Accounts).values({
-            id: newUser.userId,
-            email: newUser.email,
-            name: newUser.name,
-            parentalSurname: newUser.parentalSurname,
-            maternalSurname: newUser.maternalSurname,
-            role: newUser.role,
-            joinedAt: newUser.registratedAt
-        });
+        try {
+            await this.db.insert(Accounts).values({
+                id: newUser.userId,
+                email: newUser.email,
+                name: newUser.name,
+                parentalSurname: newUser.parentalSurname,
+                maternalSurname: newUser.maternalSurname,
+                role: newUser.role,
+                joinedAt: newUser.registratedAt
+            }).onConflictDoNothing({ target: Accounts.id });
+        } catch (error) {
+            throw new DbError(
+                error instanceof Error ? error : new Error(String(error)),
+                "Failed to register the account",
+            );
+        }
     }
 
     async updateAccount(id: string, updateData: UpdateAccountInput) {

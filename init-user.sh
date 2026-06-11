@@ -4,14 +4,34 @@ set -e
 DB_USER=${DB_USER:-user}
 DB_USER_PASS=${DB_USER_PASS:-CHANGEME}
 
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    CREATE USER $DB_USER WITH PASSWORD '$DB_USER_PASS';
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
+    --set=db_user="$DB_USER" --set=db_user_pass="$DB_USER_PASS" <<-'EOSQL'
+    SELECT format(
+        'CREATE ROLE %I LOGIN PASSWORD %L',
+        :'db_user',
+        :'db_user_pass'
+    )
+    WHERE NOT EXISTS (
+        SELECT 1 FROM pg_roles WHERE rolname = :'db_user'
+    ) \gexec
 
-    GRANT CONNECT ON DATABASE $POSTGRES_DB TO $DB_USER;
-    GRANT USAGE ON SCHEMA public TO $DB_USER;
+    SELECT format(
+        'ALTER ROLE %I WITH LOGIN PASSWORD %L',
+        :'db_user',
+        :'db_user_pass'
+    ) \gexec
 
-    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO $DB_USER;
+    SELECT format('GRANT CONNECT ON DATABASE %I TO %I', current_database(), :'db_user') \gexec
+    SELECT format('GRANT USAGE ON SCHEMA public TO %I', :'db_user') \gexec
 
-    ALTER DEFAULT PRIVILEGES FOR ROLE $POSTGRES_USER IN SCHEMA public 
-    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO $DB_USER;
+    SELECT format(
+        'GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO %I',
+        :'db_user'
+    ) \gexec
+
+    SELECT format(
+        'ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO %I',
+        current_user,
+        :'db_user'
+    ) \gexec
 EOSQL
