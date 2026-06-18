@@ -5,6 +5,8 @@ type AmqpConnection = Awaited<ReturnType<typeof amqp.connect>>;
 type AmqpChannel = Awaited<ReturnType<AmqpConnection["createChannel"]>>;
 
 export const ACCOUNT_EXCHANGE: string = "account_events";
+export const ARTICLE_EXCHANGE: string = "article_events";
+export const NOTIFICATIONS_EXCHANGE: string = "notifications_events";
 export const WAIT_EXCHANGE: string = "account_wait_exchange";
 export const DLQ_EXCHANGE: string = "account_dlq_exchange";
 
@@ -91,6 +93,9 @@ export class RabbitMQService {
 
     private async setupTopology(channel: amqp.Channel) : Promise<void> {
         await channel.assertExchange(ACCOUNT_EXCHANGE, "topic", { durable: true });
+        await channel.assertExchange(ARTICLE_EXCHANGE, "topic", { durable: true });
+        await channel.assertExchange(NOTIFICATIONS_EXCHANGE, "topic", { durable: true });
+
         await channel.assertExchange(WAIT_EXCHANGE, "topic", { durable: true });
         await channel.assertExchange(DLQ_EXCHANGE, "topic", { durable: true });
 
@@ -104,7 +109,7 @@ export class RabbitMQService {
                 "x-dead-letter-exchange": ACCOUNT_EXCHANGE
             }
         });
-        await channel.bindQueue(WAIT_QUEUE, WAIT_EXCHANGE, "wait.routing.key");
+        await channel.bindQueue(WAIT_QUEUE, WAIT_EXCHANGE, "#");
 
         await channel.assertQueue(ACCOUNT_QUEUE, { 
             durable: true,
@@ -115,6 +120,37 @@ export class RabbitMQService {
         });
 
         console.log("[RabbitMQ] Toplogy configured (Account -> Wait -> Account | DLQ)");
+    }
+
+    /**
+     * Publishes an event to the notification exchange.
+     * @param routingKey The routing key (eg. "article.published")
+     * @param message The object to send (previous JSON serialization is not required)
+     */
+    public publish(routingKey: string, message: any): boolean {
+        if (!this.channel) {
+            console.error("[RabbitMQ Publisher] Cannot publish message, channel is not initialized.");
+            return false;
+        }
+
+        try {
+            const content = Buffer.from(JSON.stringify(message));
+            
+            const sent = this.channel.publish(NOTIFICATIONS_EXCHANGE, routingKey, content, {
+                persistent: true 
+            });
+
+            if (sent) {
+                console.log(`[RabbitMQ Publisher] Message sent to [${routingKey}]`);
+            } else {
+                console.warn(`[RabbitMQ Publisher] Message to [${routingKey}] buffered, channel might be congested.`);
+            }
+            
+            return sent;
+        } catch (error) {
+            console.error(`[RabbitMQ Publisher] Failed to publish message to [${routingKey}]:`, error);
+            return false;
+        }
     }
 
     private scheduleReconnect(): void {

@@ -9,6 +9,7 @@ import { AccountRepository } from "./data_access/account_repository.js";
 import { AccountConsumer } from "./messaging/consumer.js";
 import { swaggerOptions } from "./swagger.js";
 import routes from "./routes.js";
+import { MessagingRepository } from "./data_access/messaging_repository.js";
 
 dotenv.config();
 
@@ -43,10 +44,10 @@ async function startServer() {
 
 async function bootstrap() {
     await rabbitMQService.connect();
-    const channel = rabbitMQService.getChannel();
 
     const accountRepository = new AccountRepository(db);
-    const consumer = new AccountConsumer(channel, accountRepository);
+    const messagingRepository = new MessagingRepository(db);
+    const consumer = new AccountConsumer(rabbitMQService, accountRepository, messagingRepository);
 
     await consumer.initialize();
 }
