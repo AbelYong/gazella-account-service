@@ -53,3 +53,4 @@ accounts_service   | [RabbitMQ] Toplogy configured (Account -> Wait -> Account |
 accounts_service   | [RabbitMQ] RabbitMQ Channel succesfully created
 accounts_service   | Account Service listening on 5000
 ``
+
